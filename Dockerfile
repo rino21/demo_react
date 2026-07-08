@@ -17,8 +17,16 @@ RUN rm -rf /usr/share/nginx/html/*
 
 COPY --from=builder /app/dist /usr/share/nginx/html/
 
-# Remplacer la configuration nginx par défaut
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+
+# Permissions OpenShift
+RUN mkdir -p /var/cache/nginx/client_temp \
+    && mkdir -p /var/run/nginx \
+    && chmod -R 777 /var/cache/nginx \
+    && chmod -R 777 /var/run/nginx \
+    && chmod -R 777 /usr/share/nginx/html
+
 
 EXPOSE 8080
 
