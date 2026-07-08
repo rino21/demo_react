@@ -1,33 +1,30 @@
-FROM node:latest AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package*.json .
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 RUN npm run build
 
 
-FROM nginx:alpine
+FROM nginx:stable-alpine
 
-RUN rm -rf /usr/share/nginx/html/*
 
-COPY --from=builder /app/dist /usr/share/nginx/html/
+RUN mkdir -p /usr/share/nginx/html && \
+    chgrp -R 0 /usr/share/nginx/html /var/cache/nginx /var/run && \
+    chmod -R g=u /usr/share/nginx/html /var/cache/nginx /var/run
+
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-
-# Permissions OpenShift
-RUN mkdir -p /var/cache/nginx/client_temp \
-    && mkdir -p /var/run/nginx \
-    && chmod -R 777 /var/cache/nginx \
-    && chmod -R 777 /var/run/nginx \
-    && chmod -R 777 /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+
+CMD ["nginx","-g","daemon off;"]
